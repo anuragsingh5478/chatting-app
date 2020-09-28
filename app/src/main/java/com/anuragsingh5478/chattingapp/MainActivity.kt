@@ -1,11 +1,14 @@
 package com.anuragsingh5478.chattingapp
 
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Log
-import android.widget.*
+import android.widget.Button
+import android.widget.EditText
+import android.widget.Toast
+import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.DatabaseReference
@@ -13,14 +16,21 @@ import com.google.firebase.database.ValueEventListener
 import com.google.firebase.database.ktx.database
 import com.google.firebase.ktx.Firebase
 import java.util.*
+import kotlin.collections.HashMap
 
 class MainActivity : AppCompatActivity() {
+    private val TAG = "TAG";
     lateinit var editTextMessage: EditText
     lateinit var buttonSend: Button
     lateinit var recyclerView: RecyclerView
     lateinit var myAdapter: RecyclerView.Adapter<*>
     lateinit var viewManager : RecyclerView.LayoutManager
-    private var myDataset: Array<String> = arrayOf("anurag hi","hi molu","how are you","i am fine")
+    private var myDataset: Array<String> = arrayOf(
+        "anurag hi",
+        "hi molu",
+        "how are you",
+        "i am fine"
+    )
     private  var myList: MutableList<String> = mutableListOf()
     private lateinit var database: DatabaseReference
    // private lateinit var databaseWriting: DatabaseReference
@@ -28,10 +38,13 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
+       //startActivity(Intent(this,LoginActivity::class.java))
+
+
 
         database = Firebase.database.reference
-      //  databaseWriting = Firebase.database.reference.child("chats")
-      val databaseReading = Firebase.database.reference.child("chats").orderByChild("time")
+      //val databaseReading = Firebase.database.reference.child("chats").orderByChild("time")
+       val databaseReading = Firebase.database.reference.child("chats").orderByChild("time")
         val postListener = object : ValueEventListener{
             override fun onDataChange(snapshot: DataSnapshot) {
                 myList.clear()
@@ -43,7 +56,7 @@ class MainActivity : AppCompatActivity() {
             }
 
             override fun onCancelled(error: DatabaseError) {
-                TODO("Not yet implemented")
+                Log.d(TAG, "onCancelled: something went wrong")
             }
         }
         databaseReading.addValueEventListener(postListener)
@@ -64,7 +77,10 @@ class MainActivity : AppCompatActivity() {
             if(message.trim() != ""){
                 //database.child("chats").push().setValue(message)
                 val key = database.child("chats").push().key
-                if(key!=null) {
+                val user = Objects.requireNonNull(FirebaseAuth.getInstance().currentUser)!!
+                    .email
+                if(key!=null && user!=null) {
+                    database.child("chats").child(key).child("user").setValue(user)
                     database.child("chats").child(key).child("message").setValue(message)
                     database.child("chats").child(key).child("time")
                         .setValue(Date().time.toString())
@@ -72,7 +88,7 @@ class MainActivity : AppCompatActivity() {
                 }
             }
             else{
-                Toast.makeText(this,"enter message",Toast.LENGTH_LONG).show()
+                Toast.makeText(this, "enter message", Toast.LENGTH_LONG).show()
             }
         }
 
