@@ -32,6 +32,8 @@ class MainActivity : AppCompatActivity() {
         "i am fine"
     )
     private  var myList: MutableList<String> = mutableListOf()
+    private var myUser : MutableList<String> = mutableListOf()
+    private var mySingleMessage : MutableList<SingleMessage> = mutableListOf()
     private lateinit var database: DatabaseReference
    // private lateinit var databaseWriting: DatabaseReference
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -47,10 +49,18 @@ class MainActivity : AppCompatActivity() {
        val databaseReading = Firebase.database.reference.child("chats").orderByChild("time")
         val postListener = object : ValueEventListener{
             override fun onDataChange(snapshot: DataSnapshot) {
-                myList.clear()
+                /*myList.clear()
+                myUser.clear()*/
+                mySingleMessage.clear()
                 snapshot.children.forEach { item ->
-                    myList.add(Objects.requireNonNull(item.child("message").value).toString())
+                    /*myList.add(Objects.requireNonNull(item.child("message").value).toString())
+                    myUser.add(Objects.requireNonNull(item.child("user").value).toString())*/
+                    /*mySingleMessage.add(SingleMessage(Objects.requireNonNull(item.child("message").value).toString(),
+                        Objects.requireNonNull(item.child("user").value).toString()))*/
+                    mySingleMessage.add(SingleMessage(item.child("user").value.toString()
+                        ,item.child("message").value.toString()))
                 }
+                mySingleMessage.reverse()
                 myAdapter.notifyDataSetChanged()
 
             }
@@ -62,7 +72,8 @@ class MainActivity : AppCompatActivity() {
         databaseReading.addValueEventListener(postListener)
 
         viewManager = LinearLayoutManager(this)
-        myAdapter = MyAdapter(myList)
+        //myAdapter = MyAdapter(myList,myUser)
+       myAdapter = MyAdapter(mySingleMessage)
 
         recyclerView = findViewById<RecyclerView>(R.id.recyclerView).apply {
             setHasFixedSize(true)
@@ -79,11 +90,12 @@ class MainActivity : AppCompatActivity() {
                 val key = database.child("chats").push().key
                 val user = Objects.requireNonNull(FirebaseAuth.getInstance().currentUser)!!
                     .email
-                if(key!=null && user!=null) {
+                val date = Date().time.toString()
+                if(key!=null && user!=null && date!=null) {
                     database.child("chats").child(key).child("user").setValue(user)
                     database.child("chats").child(key).child("message").setValue(message)
                     database.child("chats").child(key).child("time")
-                        .setValue(Date().time.toString())
+                        .setValue(date)
                     editTextMessage.text.clear()
                 }
             }
